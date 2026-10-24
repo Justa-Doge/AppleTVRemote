@@ -21,3 +21,4 @@ outputs/
 
 # Preserved metadata from the vendored dependency's original checkout
 work/itsytv-core/.git-upstream-backup/
+work/itsytv-macos/

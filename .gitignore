@@ -1,0 +1,23 @@
+.build/
+.swiftpm/
+DerivedData/
+
+# Locally packaged app output
+outputs/
+
+# macOS metadata
+.DS_Store
+
+# Local signing and credential material
+*.p12
+*.cer
+*.key
+*.pem
+*.mobileprovision
+
+# Editor files
+.vscode/
+.idea/
+
+# Preserved metadata from the vendored dependency's original checkout
+work/itsytv-core/.git-upstream-backup/

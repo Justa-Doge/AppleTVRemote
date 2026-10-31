@@ -1,6 +1,7 @@
 import Foundation
 import CoreGraphics
 import CryptoKit
+import Network
 import os.log
 
 private let log = CoreLog(category: "Manager")
@@ -326,6 +327,57 @@ public final class AppleTVManager {
                 self.connection?.doubleTapButton(button)
             case .hold:
                 self.connection?.holdButton(button)
+            }
+        }
+    }
+
+    /// Wake a sleeping Apple TV without requiring an already-established
+    /// Companion session. The TCP knocks wake it through Bonjour Sleep Proxy;
+    /// the queued wake command is sent after the saved session reconnects.
+    public func wakeAppleTV() {
+        guard let device = connectedDevice ?? LastConnectedDeviceStorage.load(),
+              !device.host.isEmpty else {
+            log.warning("Cannot wake Apple TV: no saved device available")
+            return
+        }
+
+        if connectionStatus == .connected, connection != nil {
+            pressButton(.wake)
+            return
+        }
+
+        let host = device.host.hasSuffix(".")
+            ? String(device.host.dropLast())
+            : device.host
+        let ports: [UInt16] = [3689, 7000, 49152, 49153]
+        for port in ports {
+            wakeKnock(host: host, port: port)
+        }
+
+        // Queue the actual authenticated wake command. The existing command
+        // path reconnects with saved credentials and flushes this afterward.
+        pressButton(.wake)
+    }
+
+    private func wakeKnock(host: String, port: UInt16) {
+        DispatchQueue.global(qos: .utility).async {
+            guard let nwPort = NWEndpoint.Port(rawValue: port) else { return }
+            let endpoint = NWEndpoint.hostPort(
+                host: NWEndpoint.Host(host),
+                port: nwPort
+            )
+            let connection = NWConnection(to: endpoint, using: .tcp)
+            connection.stateUpdateHandler = { state in
+                switch state {
+                case .ready, .failed, .cancelled:
+                    connection.cancel()
+                default:
+                    break
+                }
+            }
+            connection.start(queue: DispatchQueue.global(qos: .utility))
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.5) {
+                connection.cancel()
             }
         }
     }

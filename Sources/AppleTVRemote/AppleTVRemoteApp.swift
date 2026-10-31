@@ -147,6 +147,11 @@ struct ContentView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
+                        Button("Wake") {
+                            manager.wakeAppleTV()
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(manager.connectionStatus == .connecting || manager.connectionStatus == .pairing)
                         Button("Connect") {
                             pin = ""
                             manager.connect(to: device)
@@ -383,7 +388,7 @@ struct RemoteView: View {
                         manager.pressButton(.sleep)
                     }
                     RemoteActionButton(title: "Power On", symbol: "sun.max") {
-                        manager.pressButton(.wake)
+                        manager.wakeAppleTV()
                     }
                 }
             }

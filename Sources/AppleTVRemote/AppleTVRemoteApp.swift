@@ -213,7 +213,6 @@ struct ContentView: View {
                         manager.updateRemoteText(value)
                     }
                     .onSubmit {
-                        manager.pressButton(.select)
                         endKeyboardInput()
                     }
 
@@ -258,6 +257,20 @@ struct ContentView: View {
                 guard !event.isARepeat else { return nil }
                 manager.pressButton(.home, action: .doubleClick)
                 return nil
+            }
+
+            // In Apple TV text-entry mode, Return and Escape close the local
+            // typing session instead of becoming remote Select/Menu presses.
+            // Backspace/Delete remains with the TextField so it edits text.
+            if manager.keyboardFocused {
+                if event.keyCode == 36 || event.keyCode == 76 || event.keyCode == 53 {
+                    guard !event.isARepeat else { return nil }
+                    manager.endTextInput()
+                    return nil
+                }
+                if event.keyCode == 51 || event.keyCode == 117 {
+                    return event
+                }
             }
 
             // Command-Escape is the standard Mac-style shortcut for Home.
